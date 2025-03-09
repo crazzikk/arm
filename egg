@@ -1,0 +1,36 @@
+local function purchaseEgg()
+    -- Optional wait time before executing
+    task.wait(1)
+
+    local args = {
+        [1] = "Sapphire", -- Name of the egg
+        [2] = nil,       -- Placeholder (not used)
+        [3] = nil,       -- Triple Egg (gamepass)
+        [4] = false,     -- Auto Egg (gamepass)
+        [5] = nil,       -- Placeholder (not used)
+        [6] = true       -- Max egg
+    }
+    
+    -- Use a while loop to continuously purchase eggs
+    while true do
+        local success, message = pcall(function()
+            return game:GetService("ReplicatedStorage").Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
+        end)
+
+        if success then
+            print("Egg purchased successfully!")
+            -- Short wait to avoid overwhelming the server
+            task.wait(0.5)  -- Reduce wait time to 0.5 seconds
+        else
+            warn("Failed to purchase egg: " .. tostring(message))
+            task.wait(2)  -- Slightly longer wait if there is an error
+        end
+        
+        -- Check if the player is still in the game
+        if not game.Players.LocalPlayer then
+            break  -- Exit the loop if the player is no longer in the game
+        end
+    end
+end
+
+purchaseEgg() -- Call the function to execute the purchase
