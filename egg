@@ -1,36 +1,157 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "DioRUS HUB",
+   Icon = 0,
+   LoadingTitle = "Arm Wrestle Simulator",
+   LoadingSubtitle = "by DiorEЯ",
+   Theme = "Default",
+   DisableRayfieldPrompts = true,
+   DisableBuildWarnings = false,
+
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Big Hub"
+   },
+
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+
+   KeySystem = true,
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided",
+      FileName = "Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"DiorTop"}
+   }
+})
+
+local Tab = Window:CreateTab("Open Egg")
+
+local isPurchasing = false
+local purchaseCoroutine 
+local eggsOpened = 0 
+local showEggCount = false -- Variable to track if egg counting is enabled
+
+-- Create a ScreenGui and TextLabels for egg count display
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+
+-- Create the outline TextLabel
+local eggCountOutline = Instance.new("TextLabel", screenGui)
+eggCountOutline.Size = UDim2.new(0, 200, 0, 50)
+eggCountOutline.Position = UDim2.new(1, -220, 0, 20) -- Top right corner
+eggCountOutline.BackgroundTransparency = 1
+eggCountOutline.TextColor3 = Color3.new(0, 0, 0) -- Black color for outline
+eggCountOutline.Font = Enum.Font.SourceSansBold
+eggCountOutline.TextSize = 24
+eggCountOutline.TextStrokeTransparency = 0 -- Make the stroke visible
+eggCountOutline.Text = "Eggs Opened: 0" -- Initial text
+
+-- Create the actual TextLabel
+local eggCountLabel = Instance.new("TextLabel", screenGui)
+eggCountLabel.Size = UDim2.new(0, 200, 0, 50)
+eggCountLabel.Position = UDim2.new(1, -220, 0, 20) -- Top right corner
+eggCountLabel.BackgroundTransparency = 1
+eggCountLabel.TextColor3 = Color3.new(1, 1, 1) -- White color for text
+eggCountLabel.Font = Enum.Font.SourceSansBold
+eggCountLabel.TextSize = 24
+eggCountLabel.TextStrokeTransparency = 0.5 -- Make the stroke slightly visible
+eggCountLabel.Text = "Eggs Opened: 0" -- Initial text
+
+-- Function to reset egg count
+local function clearEggCount()
+    eggsOpened = 0
+    eggCountLabel.Text = "Eggs Opened: " .. eggsOpened -- Reset displayed egg count
+    eggCountOutline.Text = "Eggs Opened: " .. eggsOpened -- Reset outline as well
+    print("Egg count cleared.")
+end
+
 local function purchaseEgg()
-    -- Optional wait time before executing
-    task.wait(1)
+    task.wait(1) 
 
     local args = {
-        [1] = "Sapphire", -- Name of the egg
-        [2] = nil,       -- Placeholder (not used)
-        [3] = nil,       -- Triple Egg (gamepass)
-        [4] = false,     -- Auto Egg (gamepass)
-        [5] = nil,       -- Placeholder (not used)
-        [6] = true       -- Max egg
+        [1] = "Sapphire", 
+        [2] = nil,
+        [3] = nil,
+        [4] = false,
+        [5] = nil,
+        [6] = true
     }
-    
-    -- Use a while loop to continuously purchase eggs
-    while true do
-        local success, message = pcall(function()
-            return game:GetService("ReplicatedStorage").Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
-        end)
 
-        if success then
-            print("Egg purchased successfully!")
-            -- Short wait to avoid overwhelming the server
-            task.wait(0.5)  -- Reduce wait time to 0.5 seconds
-        else
-            warn("Failed to purchase egg: " .. tostring(message))
-            task.wait(2)  -- Slightly longer wait if there is an error
-        end
+    local success, message = pcall(function()
+        return game:GetService("ReplicatedStorage").Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
+    end)
+
+    if success then
+        eggsOpened = eggsOpened + 30 
+        print("Egg purchased successfully! Total eggs opened: " .. eggsOpened)
         
-        -- Check if the player is still in the game
-        if not game.Players.LocalPlayer then
-            break  -- Exit the loop if the player is no longer in the game
+        -- Update current egg count if the toggle is active
+        if showEggCount then
+            eggCountLabel.Text = "Eggs Opened: " .. eggsOpened -- Update persistent label
+            eggCountOutline.Text = "Eggs Opened: " .. eggsOpened -- Update outline as well
         end
+    else
+        warn("Failed to purchase egg: " .. tostring(message))
     end
 end
 
-purchaseEgg() -- Call the function to execute the purchase
+local Toggle = Tab:CreateToggle({
+   Name = "Sapphire Egg",
+   CurrentValue = false,
+   Flag = "Toggle1",
+   Callback = function(Value)
+       isPurchasing = Value 
+       if Value then
+           print("Автооткрытие яиц включено.")
+           
+           purchaseCoroutine = coroutine.create(function()
+               while isPurchasing do
+                   purchaseEgg() 
+                   task.wait(0.2)
+               end
+           end)
+           
+           coroutine.resume(purchaseCoroutine) 
+       else
+           print("Автооткрытие яиц отключено.")
+           isPurchasing = false 
+       end
+   end,
+})
+
+local ShowEggsToggle = Tab:CreateToggle({
+    Name = "Show Eggs Opened",
+    CurrentValue = false,
+    Flag = "Toggle2",
+    Callback = function(Value)
+        showEggCount = Value -- Update the variable that tracks whether the egg count should be shown
+        if Value then
+            print("Egg counting enabled.")
+            eggCountLabel.Text = "Eggs Opened: " .. eggsOpened -- Show current count immediately
+            eggCountOutline.Text = "Eggs Opened: " .. eggsOpened -- Show current count immediately on outline too
+        else
+            print("Egg counting disabled.")
+            eggCountLabel.Text = "Eggs Opened: 0" -- Optionally reset or hide it when toggled off
+            eggCountOutline.Text = "Eggs Opened: 0" -- Reset outline as well
+        end
+    end
+})
+
+-- Create a button to clear the egg count
+local ClearButton = Tab:CreateButton({
+    Name = "Clear Eggs Opened",
+    Callback = function()
+        clearEggCount() -- Call the function to clear the egg count
+    end
+})
+
+Rayfield:Init()
